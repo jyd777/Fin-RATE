@@ -84,16 +84,17 @@ export AZURE_OPENAI_API_KEY=""
 python generation/qa_generation.py \
     --input_path qa/dr_qa.json \
     --output-dir results/dr \
-    --deployment <model_type> \
+    --deployment [model_type] \
     --corpus corpus/corpus.jsonl
 ```
 4. Run Model Evaluation using LLM Judge
 ```bash
 export AZURE_OPENAI_KEY=""
 python evaluation/qa_llm_judge.py \
-     --input_json <output file path from step 3> \
+     --input_json [output file path from step 3] \
      --out_dir results/judge \
      --corpus corpus/corpus.jsonl \
-     --judge_backend <choices: gpt, ollama> \
-     --openai_model <model_type>
+     --judge_backend [choices: gpt, ollama] \
+     --openai_model [model_type]
 ```
+
