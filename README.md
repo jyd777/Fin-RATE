@@ -10,7 +10,7 @@ It targets financial analyst workflows that demand:
 - 🏢 **Cross-company comparison**
 - 📊 **Structured diagnosis of model failures**
 
-> 📘 [Paper (arXiv link TBD)] | 🔗 [Leaderboard (Coming Soon)] 
+> 📘 [Paper (arXiv link TBD)] | 🔗 [Leaderboard (Coming Soon)] | 🤗 [Dataset](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
 > ⬇️ SEC-based QA benchmark with 7,500 instances + interpretable evaluation.
 
 ---
@@ -74,7 +74,7 @@ conda create -n evaluation python==3.10
 conda activate evaluation
 conda install requirements.txt
 ```
-2. Decompression corpus zip
+2. Download and Decompression corpus zip from [Huggingface](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
 ```bash
 unzip corpus/corpus.zip
 ```
@@ -97,4 +97,5 @@ python evaluation/qa_llm_judge.py \
      --judge_backend [choices: gpt, ollama] \
      --openai_model [model_type]
 ```
+
 
