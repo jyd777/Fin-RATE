@@ -63,4 +63,37 @@ Fin-RATE/
 ├── evaluation/        # evaluation metrics using LLM judge (including verdicts, error taxonomy, fine-grained dimensions)
 │   └── qa_llm_judge.py
 └── requirements.txt
+```
 
+---
+## 🛠️ Usage
+1. Environment setup
+```bash
+cd Fin-RATE
+conda create -n evaluation python==3.10
+conda activate evaluation
+conda install requirements.txt
+```
+2. Decompression corpus zip
+```bash
+unzip corpus/corpus.zip
+```
+3. Run Model Generation on QAs
+```bash
+export AZURE_OPENAI_API_KEY=""
+python generation/qa_generation.py \
+    --input_path qa/dr_qa.json \
+    --output-dir results/dr \
+    --deployment <model_type> \
+    --corpus corpus/corpus.jsonl
+```
+4. Run Model Evaluation using LLM Judge
+```bash
+export AZURE_OPENAI_KEY=""
+python evaluation/qa_llm_judge.py \
+     --input_json <output file path from step 3> \
+     --out_dir results/judge \
+     --corpus corpus/corpus.jsonl \
+     --judge_backend <choices: gpt, ollama> \
+     --openai_model <model_type>
+```
