@@ -60,8 +60,7 @@ Fin-RATE/
 │   ├── dr_qa.json
 │   ├── ec_qa.json
 │   └── lt_qa.json
-├── evaluation/        # Prompts, metrics, error types
-│   └── error_taxonomy.py
-├── run_test.py        # Model inference
-├── run_eval.py        # Evaluation
+├── evaluation/        # evaluation metrics using LLM judge (including verdicts, error taxonomy, fine-grained dimensions)
+│   └── qa_llm_judge.py
 └── requirements.txt
+
