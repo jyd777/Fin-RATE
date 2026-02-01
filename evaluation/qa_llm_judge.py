@@ -694,7 +694,7 @@ def main():
     ap.add_argument("--exclude_424b2", action="store_true", help="Exclude QAs tied to 424B2 forms")
     ap.add_argument("--corpus", default=None, help="Optional corpus jsonl for precise 424B2 exclusion")
     # LLM backends
-    ap.add_argument("--judge_backend", choices=["ollama","openai","vllm","gpt"], default="ollama")
+    ap.add_argument("--judge_backend", choices=["ollama","gpt"], default="ollama")
     ap.add_argument("--openai_api_key", default=os.getenv("OPENAI_API_KEY"))
     ap.add_argument("--openai_model", default="gpt-4.1-nano")
     ap.add_argument(
@@ -761,17 +761,6 @@ def main():
             resume_append = False
             previous_results = []
             existing_qids = set()
-
-    if args.judge_backend == "vllm":
-        os.environ["CUDA_VISIBLE_DEVICES"] = args.vllm_gpu_ids
-        if not args.vllm_model_path:
-            raise ValueError("--vllm_model_path is required for vllm backend")
-        vllm_client = VLLMClient(
-            args.vllm_model_path,
-            args.vllm_gpu_ids,
-            args.vllm_tensor_parallel_size,
-            args.vllm_gpu_memory_utilization
-        )
 
         prompts_to_run: List[Tuple[str, str]] = []
         seen_after_filters = 0
@@ -879,18 +868,10 @@ def main():
 
         # Build prompt and query LLM
         llm_text = ""
-        if args.judge_backend == "vllm":
-            llm_text = llm_responses.get(qid, "")
-        else:
-            prompt = create_kp_judge_prompt(question, gold_answer, gen, kps)
-            if args.judge_backend == "ollama":
-                llm_text = _call_ollama(prompt, args.ollama_host, args.ollama_port)
-            elif args.judge_backend == "openai":
-                if not args.openai_api_key:
-                    logger.error("OpenAI API key not provided; falling back to rule-based")
-                else:
-                    llm_text = _call_openai(prompt, args.openai_api_key, args.openai_model)
-            elif args.judge_backend == "gpt":
+        prompt = create_kp_judge_prompt(question, gold_answer, gen, kps)
+        if args.judge_backend == "ollama":
+            llm_text = _call_ollama(prompt, args.ollama_host, args.ollama_port)
+        elif args.judge_backend == "gpt":
                 # Use Azure/OpenAI GPT backend mirroring evaluation/gpt4_qa.py
                 # Reuse openai_model as the deployment name (e.g., 'gpt-4.1' or 'gpt-5')
                 deployment_name = args.openai_model or "gpt-4.1"
