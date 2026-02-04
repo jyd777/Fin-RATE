@@ -297,7 +297,17 @@ B) Generation-related
   B1. Hallucination: answer not entailed by retrieved evidence
     - **Hallucination = Information that CONTRADICTS gold answer/key points**
     - **NOT hallucination = Information absent from but not contradicting gold answer/key points**
-  B2. Contradicts Evidence: explicitly conflicts with retrieved evidence
+    - B1 Error Subtypes (select the applicable label(s)):
+    - B1-1: Numeric or Categorical Hallucination - Fabricated numbers, percentages, ratings, years, categories, or other hard values that contradict or are absent from evidence. 
+    Examples: Making up specific percentages, case counts, or numerical comparisons when evidence doesn't provide them.
+    - B1-2: Entity Attribute Hallucination - Fabricated attributes, states, policies, or strategies of a single entity that contradict or are absent from evidence.
+    Examples: Claiming a company has an ESG rating system, specific litigation status, or strategic policy when evidence doesn't mention it.
+    - B1-3: Comparative Stance Hallucination - Fabricated comparative statements (A is more/less than B) without sufficient evidence support.
+    Examples: Claiming "A has significantly lower risk than B" or "A is more diversified than B" when evidence doesn't support such comparisons.
+    - B1-4: Trend or Trajectory Hallucination - Fabricated trends or trajectories over multiple periods without sufficient evidence.
+    Examples: Claiming "continuously increasing", "steadily declining", or "long-term trend" when evidence only covers partial periods or doesn't support such strong trend statements.
+
+  B2. Contradicts Evidence: contains internal logical inconsistencies, explicitly conflicts with evidence it mentioned before
   B3. Excessive Inference: generalizes beyond a reasonable range based on the evidence
   B4. Evidence Fusion Failure: fails to correctly synthesize multiple evidence pieces (complementary or conflicting)
 
@@ -309,6 +319,10 @@ C) Finance-specific numeric & semantic errors
 
 D) Query and context errors
   D1. Query misunderstanding: misidentifies intent, key entity, or asked metric
+    - D1 Error Types (select the applicable label(s)):
+    - D1-1: Intent Misunderstanding - The generated answer misunderstands the true intent of the question.
+    - D1-2: Entity Misidentification - Incorrectly identifies key entities (company names, person names, metric names, etc.).
+    - D1-3: Metric Misidentification - Incorrectly identifies the asked metric or measurement.
   D2. Context window abuse: loses key info due to length limits or fails to prioritize relevant parts
 
 ERROR TAGGING RULES:
@@ -736,7 +750,6 @@ def main():
     llm_responses: Dict[str, str] = {}
 
     # Resume support: if start_index != 1 and results.json exists, do not discard it.
-    # We'll also avoid double-counting by skipping qids already present in existing results.json.
     res_path = Path(args.out_dir) / "results.json"
     resume_append = (args.start_index != 1 and res_path.exists())
     previous_results: List[Dict[str, Any]] = []
@@ -872,11 +885,7 @@ def main():
         if args.judge_backend == "ollama":
             llm_text = _call_ollama(prompt, args.ollama_host, args.ollama_port)
         elif args.judge_backend == "gpt":
-                # Use Azure/OpenAI GPT backend mirroring evaluation/gpt4_qa.py
-                # Reuse openai_model as the deployment name (e.g., 'gpt-4.1' or 'gpt-5')
                 deployment_name = args.openai_model or "gpt-4.1"
-                # Some defaults from gpt4_qa.py expect 'gpt-4.1'/'gpt-5'; if user kept the default 'gpt-4.1-nano',
-                # still attempt the call; backend will error gracefully if unsupported.
                 effort = None if args.reasoning_effort == "none" else args.reasoning_effort
                 llm_text = _call_gpt(prompt, deployment_name, reasoning_effort=effort)
 
