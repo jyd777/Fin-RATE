@@ -223,12 +223,10 @@ def query_gpt4(
 
         if is_gpt5_family:
             completion_params["max_completion_tokens"] = 8192
+            completion_params["temperature"] = 0.7
         else:
             completion_params["max_tokens"] = 8192
             completion_params["temperature"] = 0.7
-            completion_params["top_p"] = 0.95
-            completion_params["frequency_penalty"] = 0
-            completion_params["presence_penalty"] = 0
 
         # Prefer Responses API for reasoning-capable models when available, because it supports
         # explicit reasoning controls. Fall back to Chat Completions if not supported by the endpoint.
@@ -286,7 +284,7 @@ def perform_web_search(query: str, num_results: int = 3) -> str:
         return f"Error during web search: {e}"
 
 class CorpusLoader:
-    def __init__(self, corpus_path: str = "/home/junrong/evaluation/qa/enhanced_corpus_new.jsonl"):
+    def __init__(self, corpus_path: str = ""):
         """
         initialize corpus loader
         
@@ -661,13 +659,13 @@ def process_json_file(file_path: str, generator: GPT4AnswerGenerator, output_dir
 def main():
     # parse command line arguments
     parser = argparse.ArgumentParser(description='Process QA files with GPT-4 Turbo')
-    parser.add_argument('--input_path', help='Input directory path or single JSON file path', default="/home/yidong/qa_dataset/latest/qa_pairs_with_key_points.json")
-    parser.add_argument('--output-dir', '-o', default="/home/yidong/new_datatset/gpt4_answer", 
-                       help='Output directory path (default: /home/yidong/new_datatset/gpt4_answer)')
+    parser.add_argument('--input_path', help='Input directory path or single JSON file path', default="")
+    parser.add_argument('--output-dir', '-o', default="", 
+                       help='Output directory path')
     parser.add_argument('--deployment', '-d', default="gpt-4.1", 
                        help='Azure OpenAI deployment name (default: gpt-4.1)')
-    parser.add_argument('--corpus', '-c', default="/home/yidong/DRAGIN/enhanced_corpus_new.jsonl",
-                       help='Corpus file path (default: /home/yidong/DRAGIN/enhanced_corpus_new.jsonl)')
+    parser.add_argument('--corpus', '-c', default="",
+                       help='Corpus file path')
     parser.add_argument('--web_search', action='store_true', help='Enable web search mode to augment context.')
     parser.add_argument(
         '--max_input_tokens',
