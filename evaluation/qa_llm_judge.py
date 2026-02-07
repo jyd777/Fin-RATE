@@ -171,16 +171,13 @@ def point_matches_answer(point: str, answer: str) -> bool:
     ans = normalize_text(answer)
     if not pt or not ans:
         return False
-    # direct substring
     if pt in ans:
         return True
-    # try a looser numeric check: if point has a % number, ensure that % number is in answer
     pcts = PCT_RE.findall(pt)
     if pcts:
         for p in pcts:
             if f"{p}%" in ans:
                 return True
-    # try numbers as tokens must appear
     nums = NUM_RE.findall(pt)
     if nums:
         ok = True
@@ -193,27 +190,6 @@ def point_matches_answer(point: str, answer: str) -> bool:
             return True
     return False
 
-def should_exclude_424b2(row: Dict[str, Any], corpus: Dict[str, Dict[str, Any]]|None) -> bool:
-    """
-    If corpus is provided, check any doc_ids_used title/metadata for 424B2.
-    If not provided, fallback to look for '424b2' in question.
-    """
-    doc_ids = row.get("doc_ids_used") or []
-    if corpus:
-        for did in doc_ids:
-            d = corpus.get(did)
-            if not d:
-                continue
-            title = (d.get("title") or "").lower()
-            if "424b2" in title:
-                return True
-            md = d.get("metadata") or {}
-            if str(md.get("document_type","")).lower() == "424b2":
-                return True
-        return False
-    # fallback heuristic
-    q = (row.get("question") or "").lower()
-    return "424b2" in q
 
 def load_corpus_if_needed(path: str|None) -> Dict[str, Dict[str, Any]]|None:
     if not path:
@@ -228,9 +204,6 @@ def load_corpus_if_needed(path: str|None) -> Dict[str, Dict[str, Any]]|None:
             corpus[_id]={"title":d.get("title",""),"metadata":d.get("metadata",{})}
     return corpus
 
-# ------------------------
-# LLM-as-Judge integration
-# ------------------------
 
 def create_kp_judge_prompt(question: str, gold_answer: str, generated_answer: str, key_points: List[str]) -> str:
     """Build a prompt that asks the LLM to judge the answer and evaluate key points.
@@ -238,7 +211,7 @@ def create_kp_judge_prompt(question: str, gold_answer: str, generated_answer: st
     We retain the ANALYSIS / DIMENSIONAL SCORES / VERDICT sections to stay close to
     the format in qa_judge_llm.py, and add a KEY POINTS EVALUATION section.
     """
-    # Render key points as a numbered list for unambiguous referencing
+
     kp_lines = []
     for idx, kp in enumerate(key_points, start=1):
         kp_lines.append(f"{idx}. {kp}")
@@ -387,7 +360,7 @@ KEY POINTS TO CHECK:
 
 def _call_ollama(prompt: str, host: str, port: int) -> str:
     try:
-        import requests  # local import to avoid hard dependency
+        import requests 
         url = f"http://{host}:{port}/api/generate"
         payload = {"model": "deepseek-r1:14b", "prompt": prompt, "stream": False}
         resp = requests.post(url, json=payload, timeout=120)
@@ -404,7 +377,6 @@ def _call_ollama(prompt: str, host: str, port: int) -> str:
 class VLLMClient:
     def __init__(self, model_path: str, gpu_ids: str, tensor_parallel_size: int, gpu_mem_util: float):
         try:
-            # Note: CUDA_VISIBLE_DEVICES is set in main() before this class is initialized.
             import torch
             import gc
             from vllm import LLM, SamplingParams
@@ -433,7 +405,6 @@ class VLLMClient:
                     max_model_len=4096,
                 )
 
-            # Try with requested utilization; on failure, retry with lower value(s)
             try:
                 self.llm = _try_init(gpu_mem_util)
             except Exception as e1:
@@ -504,7 +475,7 @@ class VLLMClient:
 
 def _call_openai(prompt: str, api_key: str, model: str) -> str:
     try:
-        from openai import OpenAI  # type: ignore
+        from openai import OpenAI 
         client = OpenAI(api_key=api_key)
         resp = client.chat.completions.create(
             model=model,
@@ -527,8 +498,7 @@ def _call_gpt(prompt: str, deployment_name: str, reasoning_effort: str | None = 
     Removes any <think>...</think> blocks from the output.
     """
     try:
-        # Local imports to avoid hard dependency unless this backend is used
-        from openai import AzureOpenAI, OpenAI  # type: ignore
+        from openai import AzureOpenAI, OpenAI
         api_key = os.getenv("AZURE_OPENAI_API_KEY", "")
 
         if not api_key:
@@ -538,7 +508,7 @@ def _call_gpt(prompt: str, deployment_name: str, reasoning_effort: str | None = 
         is_gpt5_family = deployment_name.startswith("gpt-5")
 
         if is_gpt5_family:
-            endpoint = "https://chronosense.openai.azure.com/openai/v1"
+            endpoint = ""
             client = OpenAI(base_url=endpoint, api_key=api_key)
             completion_params = {
                 "model": deployment_name,
@@ -548,8 +518,8 @@ def _call_gpt(prompt: str, deployment_name: str, reasoning_effort: str | None = 
                 "max_completion_tokens": 8192,
             }
         else:
-            endpoint = os.getenv("ENDPOINT_URL", "https://chronosense.openai.azure.com/")
-            api_version = "2025-01-01-preview"
+            endpoint = os.getenv("ENDPOINT_URL", "")
+            api_version = ""
             client = AzureOpenAI(
                 azure_endpoint=endpoint,
                 api_key=api_key,
@@ -568,8 +538,6 @@ def _call_gpt(prompt: str, deployment_name: str, reasoning_effort: str | None = 
                 "presence_penalty": 0,
             }
 
-        # Prefer Responses API for reasoning-capable models when supported.
-        # Fall back to Chat Completions if the endpoint doesn't support it.
         if is_gpt5_family:
             try:
                 responses_params: Dict[str, Any] = {
@@ -611,8 +579,7 @@ def parse_kp_judge_response(text: str) -> Tuple[str, Dict[str, int], Dict[str, i
     analysis_match = re.search(r"ANALYSIS:\s*(.*?)(?=KEY POINTS:|KEY POINTS SUMMARY:|DIMENSIONAL SCORES:|VERDICT:|$)", text, re.DOTALL)
     analysis = analysis_match.group(1).strip() if analysis_match else "No analysis provided"
 
-    # Parse KEY POINTS SUMMARY counts (flexible separators/order)
-    kp_counts = {"matched": None, "partial": None, "missing": None, "incorrect": None}  # type: ignore[assignment]
+    kp_counts = {"matched": None, "partial": None, "missing": None, "incorrect": None}
     kp_sum_block = re.search(r"KEY POINTS SUMMARY:\s*(.*?)(?=DIMENSIONAL SCORES:|VERDICT:|$)", text, re.IGNORECASE | re.DOTALL)
     if kp_sum_block:
         block = kp_sum_block.group(1)
@@ -623,7 +590,6 @@ def parse_kp_judge_response(text: str) -> Tuple[str, Dict[str, int], Dict[str, i
         p = _find("partial")
         mi = _find("missing")
         inc = _find("incorrect")
-        # Only set if at least one is found
         if any(v is not None for v in (m, p, mi, inc)):
             kp_counts = {
                 "matched": m if m is not None else 0,
@@ -631,7 +597,7 @@ def parse_kp_judge_response(text: str) -> Tuple[str, Dict[str, int], Dict[str, i
                 "missing": mi if mi is not None else 0,
                 "incorrect": inc if inc is not None else 0,
             }
-    # If summary not found, try parsing the KEY POINTS lines
+
     if kp_counts["matched"] is None:
         kp_block_match = re.search(r"KEY POINTS:\s*(.*?)(?=KEY POINTS SUMMARY:|DIMENSIONAL SCORES:|VERDICT:|$)", text, re.IGNORECASE | re.DOTALL)
         if kp_block_match:
@@ -649,7 +615,6 @@ def parse_kp_judge_response(text: str) -> Tuple[str, Dict[str, int], Dict[str, i
                     "incorrect": incorrect,
                 }
 
-    # Parse dimensional scores (fallback to 1s if absent)
     scores: Dict[str, int] = {}
     dims = [
         "Information Coverage",
@@ -705,8 +670,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--input_json", required=True, help="Path to input JSON file(s) (file, dir, or glob). Each entry must have 'qid', 'question', 'generated_answer', and 'key_points'.")
     ap.add_argument("--out_dir", required=True)
-    ap.add_argument("--exclude_424b2", action="store_true", help="Exclude QAs tied to 424B2 forms")
-    ap.add_argument("--corpus", default=None, help="Optional corpus jsonl for precise 424B2 exclusion")
+    ap.add_argument("--corpus", default=None, help="Optional corpus jsonl")
     # LLM backends
     ap.add_argument("--judge_backend", choices=["ollama","gpt"], default="ollama")
     ap.add_argument("--openai_api_key", default=os.getenv("OPENAI_API_KEY"))
@@ -778,8 +742,6 @@ def main():
         prompts_to_run: List[Tuple[str, str]] = []
         seen_after_filters = 0
         for qid, ex in qa_data_map.items():
-            if args.exclude_424b2 and should_exclude_424b2(ex, corpus):
-                continue
             seen_after_filters += 1
             if seen_after_filters < args.start_index:
                 continue
@@ -808,10 +770,7 @@ def main():
             for qid, text in zip(qids_in_batch, generated_texts):
                 llm_responses[qid] = text
 
-    # Prepare streaming results.json to write each case as it's processed.
-    # If resuming (start_index != 1) and results.json exists, append instead of overwriting.
     if resume_append:
-        # Open existing file and remove the closing ']' so we can append new objects.
         _results_stream = open(res_path, "r+", encoding="utf-8")
         content = _results_stream.read()
         stripped = content.rstrip()
@@ -840,10 +799,6 @@ def main():
         kps = extract_keypoints(ex)
         qa_type = qa_type_from_qid(qid)
 
-        if args.exclude_424b2 and should_exclude_424b2(ex, corpus):
-            # skip this QA entirely
-            continue
-
         seen_after_filters += 1
         if seen_after_filters < args.start_index:
             continue
@@ -851,7 +806,6 @@ def main():
             continue
 
         total_considered += 1
-        # Prefer generated_answer; fallback to final_answer or answer to support multiple generators
         gen = ex.get("generated_answer") or ex.get("final_answer") or ex.get("answer") or ""
         question = ex.get("question", "")
         gold_answer = ex.get("answer") or ""
@@ -908,7 +862,6 @@ def main():
             except Exception as e:
                 logger.error("Failed to parse LLM response, falling back: %s", e)
 
-        # If VERDICT is missing/unclear but we have KP counts, infer a verdict heuristically.
         if judge_verdict in (None, "UNCLEAR", "ERROR"):
             try:
                 if kp_counts["matched"] is not None:
@@ -925,7 +878,6 @@ def main():
             except Exception as e:
                 logger.warning("Failed to infer verdict from KP counts: %s", e)
 
-        # If LLM failed or no counts, fallback to deterministic matching
         if kp_counts["matched"] is None:
             matched = sum(1 for kp in kps if point_matches_answer(kp, gen))
             kp_counts = {
@@ -940,8 +892,6 @@ def main():
                 judge_analysis = "Rule-based fallback applied."
 
         kp_coverage_ratio = kp_counts["matched"] / max(1, len(kps))
-        # Pass mirrors LLM verdict; fallback verdict used when LLM fails
-        # Final safeguard: if verdict is still missing/unclear/error, infer from KP counts
         if judge_verdict in (None, "UNCLEAR", "ERROR"):
             matched_count = int(kp_counts.get("matched") or 0)
             partial_count = int(kp_counts.get("partial") or 0)
@@ -1003,11 +953,10 @@ def main():
                 r.get("kp_coverage_ratio"), r.get("judge_verdict"), r["passed"]
             ])
 
-    # summary (include previous cases if we resumed/appended)
+    # summary
     all_results_for_summary = (previous_results + results) if resume_append else results
     overall = {
         "evaluated_qas": len(all_results_for_summary),
-        # total_considered counts only newly processed items in this run; for resumed runs we want the combined count.
         "total_considered_after_filters": len(all_results_for_summary) if resume_append else total_considered,
         "verdict_counts": {
             "CORRECT": sum(1 for r in all_results_for_summary if r.get("judge_verdict") == "CORRECT"),
