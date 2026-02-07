@@ -10,7 +10,7 @@ import time
 import re
 
 try:
-    from tqdm.auto import tqdm  # type: ignore
+    from tqdm.auto import tqdm
 except Exception:
     tqdm = None
 
@@ -55,9 +55,7 @@ def _try_get_tokenizer():
     Uses tiktoken if available; otherwise returns None.
     """
     try:
-        import tiktoken  # type: ignore
-
-        # cl100k_base is a decent default for GPT-4/5 family token counting.
+        import tiktoken
         return tiktoken.get_encoding("cl100k_base")
     except Exception:
         return None
@@ -73,8 +71,6 @@ def _estimate_tokens(text: str) -> int:
             return len(enc.encode(text))
         except Exception:
             pass
-    # Conservative heuristic: ~4 chars/token for English-ish text; SEC filings can be dense,
-    # so we keep the estimate simple and safe.
     return max(1, (len(text) + 3) // 4)
 
 
@@ -84,7 +80,6 @@ def _truncate_middle(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     marker = "\n\n...[TRUNCATED]...\n\n"
-    # Keep both ends to preserve potentially relevant headers + conclusions.
     keep = max_chars - len(marker)
     if keep <= 0:
         return text[:max_chars]
@@ -108,7 +103,6 @@ def _truncate_text_to_tokens(text: str, max_tokens: int) -> str:
             return enc.decode(toks[:max_tokens])
         except Exception:
             pass
-    # Fallback: approximate token->char conversion
     return _truncate_middle(text, max_chars=max_tokens * 4)
 
 
@@ -139,7 +133,6 @@ def _apply_max_input_tokens(prompt: str, *, max_input_tokens: int) -> str:
 
     new_context = _truncate_text_to_tokens(context, remaining)
     new_prompt = prefix + new_context
-    # If still oversized due to estimation mismatch, truncate the whole thing as a final safety net.
     if _estimate_tokens(new_prompt) > max_input_tokens:
         new_prompt = _truncate_text_to_tokens(new_prompt, max_input_tokens)
     return new_prompt
@@ -158,8 +151,6 @@ def check_gpu_info():
             print(f"Current CUDA device: {torch.cuda.current_device()}")
             print(f"Current CUDA device name: {torch.cuda.get_device_name()}")
             print(f"CUDA_VISIBLE_DEVICES environment variable: {os.environ.get('CUDA_VISIBLE_DEVICES', '未设置')}")
-            
-            # Show usable GPUs
             for i in range(torch.cuda.device_count()):
                 print(f"GPU {i}: {torch.cuda.get_device_name(i)}")
         else:
@@ -193,14 +184,14 @@ def query_gpt4(
         is_gpt5_family = deployment_name.startswith("gpt-5")
 
         if is_gpt5_family:
-            endpoint = "https://chronosense.openai.azure.com/openai/v1"
+            endpoint = ""
             client = OpenAI(
                 base_url=endpoint,
                 api_key=api_key
             )
         else:
-            endpoint = os.getenv("ENDPOINT_URL", "https://chronosense.openai.azure.com/")
-            api_version = "2025-01-01-preview"
+            endpoint = os.getenv("ENDPOINT_URL", "")
+            api_version = ""
 
             client = AzureOpenAI(
                 azure_endpoint=endpoint,
@@ -228,8 +219,6 @@ def query_gpt4(
             completion_params["max_tokens"] = 8192
             completion_params["temperature"] = 0.7
 
-        # Prefer Responses API for reasoning-capable models when available, because it supports
-        # explicit reasoning controls. Fall back to Chat Completions if not supported by the endpoint.
         if is_gpt5_family:
             try:
                 responses_params: Dict[str, Any] = {
@@ -269,8 +258,6 @@ def perform_web_search(query: str, num_results: int = 3) -> str:
     """
     print(f"Performing web search for: {query}")
     try:
-        # Note: you may need to install duckduckgo-search
-        # pip install -U duckduckgo-search
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=num_results))
             if not results:
