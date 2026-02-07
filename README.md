@@ -10,7 +10,7 @@ It targets financial analyst workflows that demand:
 - 🏢 **Cross-company comparison**
 - 📊 **Structured diagnosis of model failures**
 
-> 📘 [Paper (arXiv link TBD)] | 🔗 [Leaderboard (Coming Soon)] | 🤗 [Dataset](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
+> 📘 [Paper (arXiv link TBD)] | 🤗 [Dataset](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
 > ⬇️ SEC-based QA benchmark with 7,500 instances + interpretable evaluation.
 
 ---
@@ -19,7 +19,7 @@ It targets financial analyst workflows that demand:
 
 Fin-RATE includes **three core QA tasks**, modeling real-world financial reasoning:
 
-<img src="./assets/fig-dataset-overview_01.png" alt="fig-dataset-overview_01" style="zoom: 5%;" />
+<img src="./assets/fig-dataset-overview_01.png" alt="fig-dataset-overview_01" style="zoom: 90%;" />
 
 | Task Type | Description                                                  |
 | --------- | ------------------------------------------------------------ |
@@ -74,7 +74,7 @@ conda create -n evaluation python==3.10
 conda activate evaluation
 conda install requirements.txt
 ```
-2. Download and Decompression corpus zip from [Huggingface](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
+2. Download and Decompression corpus zip from [Huggingface](https://huggingface.co/datasets/GGLabYale/Fin-RATE)
 ```bash
 unzip corpus/corpus.zip
 ```
@@ -97,5 +97,4 @@ python evaluation/qa_llm_judge.py \
      --judge_backend [choices: gpt, ollama] \
      --openai_model [model_type]
 ```
-
 
