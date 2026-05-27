@@ -49,6 +49,23 @@ Fin-RATE includes **three core QA tasks**, modeling real-world financial reasoni
 
 
 ---
+- **Judge self‑preference**: DeepSeek‑V3.2 is used both as a QA generator and as a high‑weight judge (0.70 in DR‑QA). This may introduce systematic bias toward answer styles or reasoning patterns that align with DeepSeek. 
+
+  > **However**, DeepSeek series models do **not** outperform others in our evaluation, mitigating the concern of unfair advantage.
+
+- **Training data contamination**: SEC filings are public and likely appear in pre‑training corpora of most evaluated LLMs (GPT, DeepSeek, Qwen, Llama). Models might recall memorized facts instead of performing genuine reasoning. 
+
+  > **Nevertheless**, our closed‑book and mismatched‑context tests show that models cannot answer correctly when the required evidence is missing or incorrect. 
+  >
+  > Moreover, Fin‑RATE emphasizes **analytical reasoning** (comparisons, trend detection, multi‑step inference), which cannot be solved by mere memorization of SEC filings.
+
+- **Error taxonomy and evaluation dimensions**: The 13‑type taxonomy focuses on factual and logical errors (e.g., hallucination, contradiction) but does not capture subjective qualities like verbosity or conciseness.
+
+  > Nevertheless, our Likert scores include a "Clarity of Expression" dimension to partially assess these aspects. The taxonomy remains a structured tool for diagnosing factual failures. 
+
+- **Document selection scope**: Fin‑RATE is built exclusively on public U.S. SEC filings. It may not fully represent private firms, non‑U.S. markets, real‑time financial data, or other document types such as earnings call transcripts and analyst reports.
+
+---
 
 ## 📦 Dataset Structure
 
