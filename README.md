@@ -49,7 +49,7 @@ Fin-RATE includes **three core QA tasks**, modeling real-world financial reasoni
 
 
 ---
-- **Judge self‑preference**: DeepSeek‑V3.2 is used both as a QA generator and as a high‑weight judge (0.70 in DR‑QA). This may introduce systematic bias toward answer styles or reasoning patterns that align with DeepSeek. 
+- **Judge self‑preference**: DeepSeek‑V3.2 is used both as a QA generator and as a high‑weight judge. This may introduce systematic bias toward answer styles or reasoning patterns that align with DeepSeek. 
 
   > **However**, DeepSeek series models do **not** outperform others in our evaluation, mitigating the concern of unfair advantage.
 
