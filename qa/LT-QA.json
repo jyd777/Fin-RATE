@@ -19405,7 +19405,12 @@
       "doc_008466",
       "doc_008481"
     ],
-    "key_points": "生成失败",
+    "key_points": [
+      "The answer must explicitly state that between 2023 and 2024, FIGS Inc. disclosed an active transition away from a specific supplier in Jordan due to allegations of substandard labor conditions, which was not present or less specific in 2023.",
+      "The answer must correctly indicate that the 2024 disclosure includes a new explicit mention of the use of sourcing agents (specifically, we currently utilize sourcing agent services to identify potential suppliers and manufacturers and to help manage such relationships), whereas the 2023 disclosure lacked this detail.",
+      "The answer must address the geographic concentration of production, noting that both 2023 and 2024 disclosures highlight continued concentration in China and risks related to the Uyghur Forced Labor Prevention Act, but the 2024 disclosure adds that the majority of production currently occurs at a third party supplier in Jordan.",
+      "The answer must correctly describe the change in disclosure as involving not only the Jordan supplier transition but also new transparency about sourcing agents and refined production geography, and it must avoid incorrectly stating that sourcing agents were not mentioned in 2024."
+      ],
     "q_id": "qa_2_001202"
   },
   {
