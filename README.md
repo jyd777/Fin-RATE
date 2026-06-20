@@ -10,7 +10,7 @@ It targets financial analyst workflows that demand:
 - 🏢 **Cross-company comparison**
 - 📊 **Structured diagnosis of model failures**
 
-> 📘 [Paper]([https://huggingface.co/datasets/JunrongChen2004/Fin-RATE](https://arxiv.org/abs/2602.07294))] | 🤗 [Dataset](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
+> 📘 [Paper](https://arxiv.org/abs/2602.07294) | 🤗 [Dataset](https://huggingface.co/datasets/JunrongChen2004/Fin-RATE)
 > ⬇️ SEC-based QA benchmark with 7,500 instances + interpretable evaluation.
 
 ---
